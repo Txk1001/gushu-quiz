@@ -94,6 +94,7 @@ th{color:var(--sub);font-weight:400}
     <input id="inp-sid" placeholder="输入学号（如 M1317260109）" maxlength="20">
     <input id="inp-name" placeholder="输入姓名（须与名单一致）" maxlength="12">
     <button class="btn" id="btn-start" style="width:100%" onclick="startGame()">开始闯关</button>
+    <button class="btn ghost" id="btn-review" style="width:100%;margin-top:10px" onclick="reviewResult()">回看 / 导出我的成绩</button>
     <div class="foot">约 15~18 分钟 · 中途勿刷新 · 支持 ?seed=数字 复现同一套题</div>
   </div>
 </div>
@@ -571,32 +572,50 @@ function endGame(){
   markDone();
   var totalMs=Date.now()-startedAt;
   var score=round1(results.reduce(function(s,r){return s+r.score;},0));
-  var firstCount=results.filter(function(r){return r.firstTry;}).length;
   trace.push({t:Date.now(),e:"end",totalMs:totalMs,totalScore:score});
-
-  document.getElementById("s-game").classList.remove("on");
-  document.getElementById("s-end").classList.add("on");
-  document.getElementById("end-name").textContent=name;
-  document.getElementById("end-sid").textContent="学号："+sid;
-  document.getElementById("end-score").textContent=score;
-  document.getElementById("end-max").textContent=paperMax();
-  document.getElementById("end-time").textContent=fmtMs(totalMs);
-  document.getElementById("end-first").textContent=firstCount;
-  document.getElementById("end-rankkey").textContent="决名次键：总分 "+score+" 分 · 总用时 "+totalMs+" 毫秒（总分降序 → 用时升序）";
-  var g=score>=paperMax()*0.9?"S":score>=paperMax()*0.7?"A":score>=paperMax()*0.5?"B":"C";
-  document.getElementById("end-grade").textContent=g;
-
-  var tb=document.getElementById("end-rows"), html="";
-  results.forEach(function(r){
-    html+="<tr><td>"+r.idx+"</td><td>"+TYPENAME[r.type]+"</td><td>"+DIFNAME[r.d]+"</td><td>"+r.attempts+"</td><td>"+fmtMs(r.usedMs)+"</td><td>"+(r.firstTry?"✓":"—")+"</td><td>"+r.score+"</td></tr>";
-  });
-  tb.innerHTML=html;
-  window.scrollTo(0,0);
-
+  renderResult(name, sid, results, totalMs);
   if(serverEnabled()){
     api("/result",{ sid:sid, name:name, seed:seed, totalMs:totalMs, totalScore:score, results:results, trace:trace })
       .catch(function(){ /* 结果上报失败不阻塞本机展示 */ });
   }
+}
+
+function renderResult(nm, sidv, rs, totalMs){
+  var score=round1(rs.reduce(function(s,r){return s+r.score;},0));
+  var firstCount=rs.filter(function(r){return r.firstTry;}).length;
+  var mx = (paper && paper.length) ? paperMax() : 134;
+  document.getElementById("s-game").classList.remove("on");
+  document.getElementById("s-start").classList.remove("on");
+  document.getElementById("s-end").classList.add("on");
+  document.getElementById("end-name").textContent=nm;
+  document.getElementById("end-sid").textContent="学号："+sidv;
+  document.getElementById("end-score").textContent=score;
+  document.getElementById("end-max").textContent=mx;
+  document.getElementById("end-time").textContent=fmtMs(totalMs);
+  document.getElementById("end-first").textContent=firstCount;
+  document.getElementById("end-rankkey").textContent="决名次键：总分 "+score+" 分 · 总用时 "+totalMs+" 毫秒（总分降序 → 用时升序）";
+  var g=score>=mx*0.9?"S":score>=mx*0.7?"A":score>=mx*0.5?"B":"C";
+  document.getElementById("end-grade").textContent=g;
+  var tb=document.getElementById("end-rows"), html="";
+  rs.forEach(function(r){
+    html+="<tr><td>"+r.idx+"</td><td>"+TYPENAME[r.type]+"</td><td>"+DIFNAME[r.d]+"</td><td>"+r.attempts+"</td><td>"+fmtMs(r.usedMs)+"</td><td>"+(r.firstTry?"✓":"—")+"</td><td>"+r.score+"</td></tr>";
+  });
+  tb.innerHTML=html;
+  window.scrollTo(0,0);
+}
+
+function reviewResult(){
+  var box1=document.getElementById("inp-sid"), box2=document.getElementById("inp-name");
+  var v1=box1.value.trim(), v2=box2.value.trim();
+  if(!v1 || !v2){ alert("请先在上方填写学号与姓名。"); return; }
+  var nSid=normSid(v1), nName=normName(v2);
+  if(!ROSTER.hasOwnProperty(nSid) || ROSTER[nSid]!==nName){ alert("学号与姓名不匹配。"); return; }
+  sid=nSid; name=ROSTER[nSid];
+  var st=loadProg();
+  if(!st || !(st.results && st.results.length)){ alert("本机未找到该学号的成绩记录。\n请用【答题时的那台浏览器】打开本页面，且不要清除浏览器数据。"); return; }
+  results=st.results; trace=st.trace||[]; startedAt=st.startedAt||Date.now();
+  paper=loadPaper()||[];
+  renderResult(name, sid, results, Date.now()-startedAt);
 }
 
 function exportJSON(){
@@ -605,7 +624,7 @@ function exportJSON(){
     ts:new Date().toISOString(),
     totalScore:round1(results.reduce(function(s,r){return s+r.score;},0)),
     maxPossible:paperMax(),
-    totalMs:Date.now()-totalStart,
+    totalMs:Date.now()-startedAt,
     firstTryCount:results.filter(function(r){return r.firstTry;}).length,
     results:results,
     trace:trace
@@ -634,11 +653,10 @@ function exportJSON(){
     alert("已重置学号 "+r+" 的答题记录。");
   }
 })();
-/* 到点禁用入口 */
+/* 到点只禁用「开始闯关」，保留「回看成绩」入口 */
 (function(){
   if(isExpired()){
-    var b=document.getElementById("inp-sid"), n=document.getElementById("inp-name"), g=document.getElementById("btn-start");
-    if(b) b.disabled=true; if(n) n.disabled=true;
+    var g=document.getElementById("btn-start");
     if(g){ g.disabled=true; g.textContent="答题已截止（21:40）"; }
   }
 })();

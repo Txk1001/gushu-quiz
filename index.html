@@ -88,11 +88,12 @@ th{color:var(--sub);font-weight:400}
       · 试错递增：第 1 次错 −2、第 2 次 −4、第 3 次 −6（每题最多 3 次提交）；<br>
       · 超时连续扣：超限时后每秒 −0.5 分。<br><br>
       <b>决名次依据</b>：总分降序 → 总用时（精确到毫秒）升序，用于并列时决出名次。<br><br>
-      <b style="color:var(--gold)">进入验证</b>：学号 + 姓名须与报名名单一致方可进入；每人仅 <b>一次</b> 答题机会（提交后不可重复进入）。
+      <b style="color:var(--gold)">进入验证</b>：学号 + 姓名须与报名名单一致方可进入；每人仅 <b>一次</b> 答题机会（提交后不可重复进入）。<br>
+      <b style="color:var(--red)">答题截止：2026-10-15 21:40</b>（到点后新考生不可再进入）。
     </div>
     <input id="inp-sid" placeholder="输入学号（如 M1317260109）" maxlength="20">
     <input id="inp-name" placeholder="输入姓名（须与名单一致）" maxlength="12">
-    <button class="btn" style="width:100%" onclick="startGame()">开始闯关</button>
+    <button class="btn" id="btn-start" style="width:100%" onclick="startGame()">开始闯关</button>
     <div class="foot">约 15~18 分钟 · 中途勿刷新 · 支持 ?seed=数字 复现同一套题</div>
   </div>
 </div>
@@ -173,6 +174,10 @@ var BONUS = { easy: 2, mid: 3, hard: 4 };   // 首次提交即对加分
 var TYPENAME = { sort:"排序", fill:"补全", fix:"纠错", debug:"调错" };
 var DIFNAME  = { easy:"易", mid:"中", hard:"难" };
 var TAG = { e:"事件", c:"条件", a:"动作" };
+
+/* 答题截止时间：到点后新考生不可再进入 */
+var DEADLINE = Date.parse("2026-10-15T21:40:00+08:00");
+function isExpired(){ return Date.now() >= DEADLINE; }
 
 /* ============ 报名名单（26 人）与登录校验 ============ */
 function normSid(s){ return String(s).replace(/\s+/g,'').toUpperCase(); }
@@ -337,6 +342,7 @@ function currentSubmission(){
 
 /* ============ 开始 / 流程 ============ */
 function startGame(){
+  if(isExpired()){ alert("答题已截止（21:40），无法再进入。"); return; }
   var box1=document.getElementById("inp-sid"), box2=document.getElementById("inp-name");
   var v1=box1.value.trim(), v2=box2.value.trim();
   box1.style.borderColor=""; box2.style.borderColor="";
@@ -626,6 +632,14 @@ function exportJSON(){
     var r=normSid(decodeURIComponent(m[1]));
     Object.keys(LS).forEach(function(k){ try{ localStorage.removeItem(LS[k]+r); }catch(e){} });
     alert("已重置学号 "+r+" 的答题记录。");
+  }
+})();
+/* 到点禁用入口 */
+(function(){
+  if(isExpired()){
+    var b=document.getElementById("inp-sid"), n=document.getElementById("inp-name"), g=document.getElementById("btn-start");
+    if(b) b.disabled=true; if(n) n.disabled=true;
+    if(g){ g.disabled=true; g.textContent="答题已截止（21:40）"; }
   }
 })();
 </script>

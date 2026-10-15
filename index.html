@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>古蜀回响 · 交互逻辑闯关（选拔升级版 v2）</title>
+<style>
+:root{
+  --bg:#0b0f1a;--panel:#131a2a;--panel2:#1a2338;--line:#2a3654;
+  --txt:#e8edf7;--sub:#8b98b8;--gold:#e8b64c;
+  --purple:#8f7ff0;--amber:#e8a04c;--teal:#3fd3c5;--red:#e05a5a;--green:#4cc97a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;line-height:1.6}
+.wrap{max-width:680px;margin:0 auto;padding:16px}
+.screen{display:none}.screen.on{display:block}
+h1{font-size:22px;font-weight:600;color:var(--gold)}
+h2{font-size:17px;font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.sub{color:var(--sub);font-size:13px}
+.btn{display:inline-block;background:var(--gold);color:#1a1405;border:none;border-radius:10px;padding:12px 28px;font-size:16px;font-weight:600;cursor:pointer}
+.btn:active{opacity:.85}
+.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);font-weight:400}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:12px 14px;font-size:16px;margin:6px 0 10px}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-right:6px}
+.tag.e{background:rgba(143,127,240,.18);color:var(--purple)}
+.tag.c{background:rgba(232,160,76,.18);color:var(--amber)}
+.tag.a{background:rgba(63,211,197,.15);color:var(--teal)}
+.mode{display:inline-block;font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid var(--line);color:var(--sub);margin-bottom:10px}
+.mode.warn{border-color:rgba(232,160,76,.5);color:var(--amber)}
+.mode.ok{border-color:rgba(76,201,122,.5);color:var(--green)}
+.blocks{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.blk{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--sub);border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer;user-select:none;transition:transform .1s}
+.blk:active{transform:scale(.98)}
+.blk.t-e{border-left-color:var(--purple)}
+.blk.t-c{border-left-color:var(--amber)}
+.blk.t-a{border-left-color:var(--teal)}
+.blk.sel{border-color:var(--gold);background:rgba(232,182,76,.1)}
+.blk.locked{cursor:default}
+.blk.gap{border:1.5px dashed var(--gold);background:transparent;color:var(--sub);text-align:center;border-left-width:1.5px}
+.chain{min-height:60px;border:1.5px dashed var(--line);border-radius:12px;padding:10px;margin:12px 0}
+.chain .blk{margin-bottom:8px}
+.chain .blk:last-child{margin-bottom:0}
+.chain .ph{color:var(--sub);font-size:13px;text-align:center;padding:12px}
+.code{background:#0b0f1a;border:1px solid var(--line);border-radius:12px;padding:10px;margin:12px 0;font-family:Consolas,"Courier New",monospace;font-size:13px}
+.line{display:flex;gap:10px;padding:6px 8px;border-radius:8px;cursor:pointer;user-select:none}
+.line:hover{background:rgba(232,182,76,.06)}
+.line.sel{background:rgba(232,182,76,.14);border:1px solid var(--gold)}
+.line .ln{color:var(--sub);min-width:20px;text-align:right}
+.line .lc{color:var(--txt);white-space:pre-wrap}
+.lvl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.lvl-badge{font-size:12px;color:var(--gold);border:1px solid rgba(232,182,76,.4);border-radius:20px;padding:2px 12px}
+.target{background:rgba(232,182,76,.07);border:1px solid rgba(232,182,76,.25);border-radius:12px;padding:14px;font-size:14px}
+.fb{border-radius:10px;padding:10px 14px;font-size:14px;margin:10px 0;display:none}
+.fb.ok{display:block;background:rgba(76,201,122,.12);color:var(--green);border:1px solid rgba(76,201,122,.3)}
+.fb.bad{display:block;background:rgba(224,90,90,.12);color:var(--red);border:1px solid rgba(224,90,90,.3)}
+.hud{display:flex;justify-content:space-between;font-size:13px;color:var(--sub);padding:8px 2px;flex-wrap:wrap;gap:4px}
+.hud b{color:var(--txt)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--sub);font-weight:400}
+.grade{font-size:56px;font-weight:600;color:var(--gold);text-align:center;margin:10px 0}
+.center{text-align:center}
+.shot-hint{background:rgba(63,211,197,.08);border:1px solid rgba(63,211,197,.3);border-radius:12px;padding:14px;font-size:14px;color:var(--teal);margin-top:12px}
+.foot{font-size:12px;color:var(--sub);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="screen on" id="s-start">
+  <div class="card center" style="margin-top:24px">
+    <div style="font-size:13px;color:var(--sub);letter-spacing:4px">数字交互媒体设计 · 选手初筛（升级版）</div>
+    <h1 style="margin:14px 0 4px">古蜀回响</h1>
+    <div class="sub" style="margin-bottom:12px">交互逻辑测评 · v2</div>
+    <span class="mode warn" id="mode-badge">演示模式（离线）</span>
+    <div class="sub" style="text-align:left;font-size:13px">
+      你是一名数字展馆交互设计师。沉睡三千年的古蜀文物等待被唤醒——<br><br>
+      <b>共 10 题</b>，从 <b>30 题题库随机抽题</b>（难度结构固定、具体题目随机），四种题型：<br>
+      · 排序：从备选挑逻辑块，按正确顺序拼成完整链条<br>
+      · 补全：链条缺一环，从选项挑出正确一块<br>
+      · 纠错：链条中藏着一个错误块，找到并替换<br>
+      · 调错：一段伪代码写错一处，找错行并选正确替换<br><br>
+      <span class="tag e">事件</span>触发源头&ensp;<span class="tag c">条件</span>判断分支&ensp;<span class="tag a">动作</span>执行结果<br><br>
+      <b>计分规则（拉开分差）</b>：每题得分 = 分值 + 首对加分 − 试错递增扣分 − 超时扣分（每秒 −0.5 分）。<br>
+      · 首对加分：首次提交即对，easy +2 / mid +3 / hard +4；<br>
+      · 试错递增：第 1 次错 −2、第 2 次 −4、第 3 次 −6（每题最多 3 次提交）；<br>
+      · 超时连续扣：超限时后每秒 −0.5 分。<br><br>
+      <b>决名次依据</b>：总分降序 → 总用时（精确到毫秒）升序，用于并列时决出名次。<br><br>
+      <b style="color:var(--gold)">进入验证</b>：学号 + 姓名须与报名名单一致方可进入；每人仅 <b>一次</b> 答题机会（提交后不可重复进入）。
+    </div>
+    <input id="inp-sid" placeholder="输入学号（如 M1317260109）" maxlength="20">
+    <input id="inp-name" placeholder="输入姓名（须与名单一致）" maxlength="12">
+    <button class="btn" style="width:100%" onclick="startGame()">开始闯关</button>
+    <div class="foot">约 15~18 分钟 · 中途勿刷新 · 支持 ?seed=数字 复现同一套题</div>
+  </div>
+</div>
+
+<div class="screen" id="s-game">
+  <div class="hud">
+    <span>选手：<b id="hud-name"></b></span>
+    <span>进度：<b id="hud-prog"></b></span>
+    <span>总分：<b id="hud-score">0</b></span>
+    <span>剩余提交：<b id="hud-att"></b></span>
+    <span>用时：<b id="hud-time">0:00</b></span>
+  </div>
+  <div class="card">
+    <div class="lvl-head">
+      <h2 id="lvl-title"></h2>
+      <span class="lvl-badge" id="lvl-badge"></span>
+    </div>
+    <div class="target" id="lvl-target"></div>
+    <div class="sub" style="margin-top:14px" id="pool-label"></div>
+    <div class="blocks" id="pool"></div>
+    <div class="sub" id="chain-label"></div>
+    <div class="chain" id="chain"></div>
+    <div class="fb" id="fb"></div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn ghost" style="flex:1" onclick="resetChain()" id="btn-reset">清空重来</button>
+      <button class="btn" style="flex:2" id="btn-run" onclick="runChain()">运 行</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="s-end">
+  <div class="card center" style="margin-top:20px">
+    <div class="sub" style="letter-spacing:3px">测 评 成 绩 单</div>
+    <h1 id="end-name" style="margin-top:10px"></h1>
+    <div class="sub" id="end-sid"></div>
+    <div class="grade" id="end-grade"></div>
+    <div style="font-size:15px;margin-bottom:6px">总分 <b id="end-score" style="color:var(--gold);font-size:22px"></b> / <span class="sub" id="end-max"></span></div>
+    <div class="sub">总用时 <b id="end-time" style="color:var(--txt)"></b>（毫秒级）· 首对 <b id="end-first" style="color:var(--txt)"></b> / 10</div>
+    <div class="sub" style="margin-top:6px" id="end-rankkey"></div>
+  </div>
+  <div class="card">
+    <table>
+      <tr><th>题</th><th>题型</th><th>难度</th><th>提交</th><th>用时</th><th>首对</th><th>得分</th></tr>
+      <tbody id="end-rows"></tbody>
+    </table>
+  </div>
+  <div class="card center">
+    <button class="btn" style="width:100%" onclick="exportJSON()">下载成绩单 JSON（含作答轨迹）</button>
+  </div>
+  <div class="shot-hint">请截图本页面，或点击上方按钮导出 JSON 成绩单（含学号、总分、毫秒级用时与逐题作答轨迹），发送给指导老师作为初筛凭证。</div>
+  <div class="foot">古蜀回响 · 交互逻辑测评 v2</div>
+</div>
+
+</div>
+<script>
+/* =========================================================================
+ * 可插拔服务端配置（正式选拔必读）
+ * -------------------------------------------------------------------------
+ * 本文件默认运行「演示模式（离线）」：判定在浏览器本地完成，答案在源码中
+ * 可见，仅供功能演示与试运行，不构成可信成绩。
+ *
+ * 正式选拔请：
+ *   1) 将 SERVER.enabled 设为 true，并填写 SERVER.baseUrl（服务端地址）；
+ *   2) 由服务端实现 /login、/judge、/result 三个接口（见下方 api() 与调用点）；
+ *   3) 答案、判定、身份、单次作答限制、时间戳与作答轨迹全部以服务端为准，
+ *      彻底杜绝 F12 抄答案、改截图刷分。
+ *
+ * 每题最多提交次数 MAX_ATTEMPTS 默认为 3；正式选拔建议设为 1（由服务端强制）。
+ * ========================================================================= */
+var SERVER = {
+  enabled: false,      // true = 走服务端判定与登录
+  baseUrl: '',         // 例如 'https://example.com/api'
+  token: ''            // 登录后由服务端下发，无需手填
+};
+var MAX_ATTEMPTS = 3;         // 每题最多提交次数（正式选拔建议 1）
+var TIME_PEN_RATE = 0.5;      // 超时每秒扣分
+var BONUS = { easy: 2, mid: 3, hard: 4 };   // 首次提交即对加分
+var TYPENAME = { sort:"排序", fill:"补全", fix:"纠错", debug:"调错" };
+var DIFNAME  = { easy:"易", mid:"中", hard:"难" };
+var TAG = { e:"事件", c:"条件", a:"动作" };
+
+/* ============ 报名名单（26 人）与登录校验 ============ */
+function normSid(s){ return String(s).replace(/\s+/g,'').toUpperCase(); }
+function normName(s){ return String(s).replace(/\s+/g,'').replace(/[•∙.．]/g,'·'); }
+var ROSTER_RAW = [
+ ["M1317260109","江中毅"],["M1317260102","徐豪"],["M1317260137","麦尔古拜·木沙"],["M1317260113","赵佳博"],
+ ["M1317260138","齐曼古丽·艾散"],["M1317260115","田馨楷"],["M1317260120","龚香菡"],["M1317260126","孙文聪"],
+ ["M1317260119","吕雨宸"],["M1317260118","袁悦"],["M1317260114","王宇"],["M1317260101","虞锦晨"],
+ ["M1317260128","孙晶晶"],["M1317260132","胡凯雯"],["M1317260131","田咏鑫"],["M1317260130","付斯云"],
+ ["M1317260125","水妍莹"],["M1317260123","夏语涵"],["M1317260104","吕哲"],["M1317260103","徐郦彭"],
+ ["M1317260105","袁施昱"],["M1317260106","张轩睿"],["M1317260111","张智豪"],["M1317260134","张倩宁"],
+ ["M1317260110","于亚富"],["M1317260127","李思诺"]
+];
+var ROSTER = {};
+ROSTER_RAW.forEach(function(p){ ROSTER[normSid(p[0])] = normName(p[1]); });
+
+/* 一次性机会：本地 localStorage（演示模式）；正式选拔由服务端 /login 强制 */
+var LS = { paper:"gushu_paper_", prog:"gushu_prog_", done:"gushu_done_" };
+function savePaper(){ try{ localStorage.setItem(LS.paper+sid, JSON.stringify(paper)); }catch(e){} }
+function loadPaper(){ try{ return JSON.parse(localStorage.getItem(LS.paper+sid)); }catch(e){ return null; } }
+function persist(){ try{ localStorage.setItem(LS.prog+sid, JSON.stringify({results:results, trace:trace, startedAt:startedAt})); }catch(e){} }
+function loadProg(){ try{ return JSON.parse(localStorage.getItem(LS.prog+sid)); }catch(e){ return null; } }
+function markDone(){ try{ localStorage.setItem(LS.done+sid, new Date().toISOString()); }catch(e){} }
+function isDone(){ try{ return !!localStorage.getItem(LS.done+sid); }catch(e){ return false; } }
+
+function serverEnabled(){ return SERVER.enabled && SERVER.baseUrl; }
+
+/* 服务端接口（启用时使用）。三个端点可按需调整路径与字段。 */
+function api(path, body){
+  return fetch(SERVER.baseUrl + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SERVER.token },
+    body: JSON.stringify(body)
+  }).then(function(r){ return r.json(); });
+}
+
+/* =========================================================================
+ * 题库：10 个「题位」× 3 道候选 = 30 题（约为原 8 题的 3.75 倍）。
+ * 每位选手按相同难度结构随机抽 10 题（每题位抽 1 题），保证难度公平、题目各异。
+ * type: sort排序 / fill补全 / fix纠错 / debug调错
+ * d: easy/mid/hard   w: 分值(题位固定)   par: 限时秒
+ * sol: 排序正确答案(原始块下标序列)  ans: 补全/纠错/调错正确选项下标  bug: 错误块/错误行下标
+ * ========================================================================= */
+var BANK=[
+ {w:6,par:40,qs:[
+  {qid:"s1-1",type:"sort",d:"easy",t:"唤醒面具",target:"观众点击青铜面具，面具亮起金光，随后浮现铭文注解。",blocks:[["e","用户点击青铜面具"],["a","面具亮起金光"],["a","浮现铭文注解"]],sol:[0,1,2]},
+  {qid:"s1-2",type:"sort",d:"easy",t:"展灯开关",target:"观众点击「展灯」按钮，主光源亮起，随后背景音乐响起。",blocks:[["e","用户点击「展灯」按钮"],["a","主光源亮起"],["a","背景音乐响起"],["a","熄灭主光源"]],sol:[0,1,2]},
+  {qid:"s1-3",type:"sort",d:"easy",t:"陶俑流转",target:"观众轻点陶俑，陶俑旋转一周后停止。",blocks:[["e","用户点击陶俑"],["a","陶俑旋转一周"],["a","陶俑停止"],["c","判断旋转角度是否为360度"]],sol:[0,1,2]}
+ ]},
+ {w:6,par:55,qs:[
+  {qid:"s2-1",type:"sort",d:"mid",t:"青铜门开",target:"观众点击「开门」按钮，石门缓慢打开，随后播放开门的回响音效。",blocks:[["e","用户点击「开门」按钮"],["a","石门缓慢打开"],["a","播放开门回响音效"],["c","判断石门是否已打开"]],sol:[0,1,2]},
+  {qid:"s2-2",type:"sort",d:"mid",t:"纹饰流转",target:"观众在屏幕滑动，纹饰跟随手指旋转；松手后纹饰减速停下并复位到初始角度。",blocks:[["e","用户滑动屏幕"],["a","纹饰跟随手指旋转"],["e","用户松开手指"],["a","纹饰减速停下并复位"],["a","纹饰持续加速旋转"],["c","判断滑动方向"]],sol:[0,1,2,3]},
+  {qid:"s2-3",type:"sort",d:"mid",t:"点燃火炬",target:"观众点击火炬，先判断火炬是否已点燃：未点燃则点燃火焰；已点燃则无变化。",blocks:[["e","用户点击火炬"],["c","判断火炬是否已点燃"],["a","点燃火焰"],["a","无变化"],["a","熄灭火焰"]],sol:[0,1,2,3]}
+ ]},
+ {w:9,par:60,qs:[
+  {qid:"s3-1",type:"fill",d:"mid",t:"昼夜展馆",target:"观众点击「切换模式」：如果当前是白天，则关闭主光源并点亮夜间射灯；否则打开主光源恢复白天光照。链条缺失一环，请补全。",pre:[["e","用户点击「切换模式」按钮"],["c","判断当前是否为白天"],["a","关闭主光源"],null,["a","打开主光源恢复白天光照"]],options:[["a","点亮夜间射灯"],["a","同时点亮夜间射灯与主光源"],["a","播放夜间背景音乐"],["c","再次判断是否为白天"],["a","熄灭全部灯光"]],ans:0},
+  {qid:"s3-2",type:"fill",d:"mid",t:"音量调节",target:"观众点击「音量+」：判断音量是否已达最大——未达最大则音量加一档；已达最大则提示「已到最大」。链条缺失一环，请补全。",pre:[["e","用户点击「音量+」"],["c","判断音量是否已达最大"],["a","音量加一档"],null],options:[["a","提示「已到最大」"],["a","音量减一档"],["c","再次判断音量"],["e","用户松开手指"],["a","静音"]],ans:0},
+  {qid:"s3-3",type:"fill",d:"mid",t:"门票检测",target:"观众点击「进入展厅」：先判断是否持有门票，持有则打开展厅门；未持有则提示「请购票」。链条缺失一环，请补全。",pre:[["e","用户点击「进入展厅」"],["c","判断是否持有门票"],null,["a","提示「请购票」"]],options:[["a","打开展厅门"],["a","播放背景音乐"],["c","判断是否成年"],["e","用户再次点击"],["a","关闭展厅门"]],ans:0}
+ ]},
+ {w:10,par:70,qs:[
+  {qid:"s4-1",type:"fix",d:"mid",t:"碎片之门",target:"需求：点击「开启石门」后，先读取已收集碎片数；达到3枚则播放开门动画并扣除3枚；否则提示「碎片不足」。下方实现有一块写错，请找错并替换。",pre:[["e","用户点击「开启石门」"],["a","读取已收集碎片数"],["c","判断碎片数是否达到3枚"],["a","扣除全部碎片"],["a","提示「碎片不足」"]],bug:3,options:[["a","播放开门动画并扣除3枚碎片"],["a","播放开门动画"],["a","扣除3枚碎片"],["a","再次读取碎片数"]],ans:0},
+  {qid:"s4-2",type:"fix",d:"mid",t:"讲解播放",target:"需求：点击「讲解」按钮，先判断是否正在播放：未播放则开始播放；已播放则停止播放。下方实现有一块写错，请找错并替换。",pre:[["e","用户点击「讲解」按钮"],["c","判断是否正在播放"],["a","开始播放"],["a","继续播放"]],bug:3,options:[["a","停止播放"],["a","从头播放"],["a","暂停播放"],["c","再次判断是否正在播放"]],ans:0},
+  {qid:"s4-3",type:"fix",d:"mid",t:"展柜灯",target:"需求：点击「灯」按钮，灯亮时点击应熄灭；灯灭时点击应点亮。下方实现有一块写错，请找错并替换。",pre:[["e","用户点击「灯」按钮"],["c","判断灯是否点亮"],["a","点亮灯"],["a","点亮灯"]],bug:2,options:[["a","熄灭灯"],["a","保持当前状态"],["c","判断是否在白天"],["a","播放音效"]],ans:0}
+ ]},
+ {w:12,par:90,qs:[
+  {qid:"s5-1",type:"sort",d:"hard",t:"祭祀之火",target:"观众每次点击火盆：先读取当前计数并加1；判断是否达到5次——达到则触发祭祀大典动画并清零；否则火焰变大一级。",blocks:[["e","用户点击火盆"],["a","读取计数并加1"],["c","判断计数是否达到5"],["a","触发祭祀大典动画"],["a","将计数清零"],["a","火焰变大一级"],["a","每次点击都清零"],["c","判断是否为首次点击"],["a","播放点火音效"]],sol:[0,1,2,3,4,5]},
+  {qid:"s5-2",type:"sort",d:"hard",t:"神树共鸣",target:"观众长按神树：判断长按是否超过2秒——未超过则枝头微光提示；超过则判断鸟形饰是否已点亮：已点亮则整体发光并播共鸣音，未点亮则鸟形饰开始充能。",blocks:[["e","用户长按神树"],["c","判断长按是否超过2秒"],["a","枝头微光提示"],["c","判断鸟形饰是否已点亮"],["a","神树整体发光并播放共鸣音"],["a","鸟形饰开始充能"],["a","立即整体发光"],["c","判断是否超过5秒"],["e","用户松开手指"]],sol:[0,1,2,3,4,5]},
+  {qid:"s5-3",type:"sort",d:"hard",t:"金杖解封",target:"观众点击「开始解封」后启动10秒倒计时；此后每次点击符文，先判断倒计时是否进行中——已结束则无响应；进行中则点亮该符文并判断是否已点亮4个：达到则停止倒计时并胜利；否则继续。倒计时自然结束时熄灭全部并提示失败。",blocks:[["e","用户点击「开始解封」"],["a","启动10秒倒计时"],["e","用户点击某个符文"],["c","判断倒计时是否进行中"],["a","无响应"],["a","点亮该符文"],["c","判断是否已点亮4个"],["a","停止倒计时并播放胜利动画"],["e","倒计时自然结束"],["a","熄灭全部并提示失败"],["a","点亮全部符文"],["c","判断是否首次点击"],["a","重置倒计时"]],sol:[0,1,2,3,4,5,6,7,8,9]}
+ ]},
+ {w:11,par:90,qs:[
+  {qid:"s6-1",type:"debug",d:"mid",t:"音量上限",target:"需求：音量最大为10档，点击「+」且未满时音量+1，满10档则提示「已最大」。下方伪代码写错一处，请找错行并选正确替换。",lines:["如果 音量 <= 10 则","    音量 = 音量 + 1","否则","    提示「已最大」"],bug:0,options:["将「<= 10」改为「< 10」","将「<= 10」改为「> 10」","将「<= 10」改为「== 10」","将「<= 10」改为「>= 10」"],ans:0},
+  {qid:"s6-2",type:"debug",d:"mid",t:"碎片扣除",target:"需求：开启石门需扣除3枚碎片。下方伪代码写错一处，请找错行并选正确替换。",lines:["如果 碎片数 >= 3 则","    碎片数 = 碎片数 - 1","    播放开门动画","否则","    提示「碎片不足」"],bug:1,options:["将「- 1」改为「- 3」","将「- 1」改为「+ 1」","将「- 1」改为「- 2」","将「- 1」改为「= 0」"],ans:0},
+  {qid:"s6-3",type:"debug",d:"mid",t:"灯状态判断",target:"需求：点击「灯」，灯亮时熄灯、灯灭时亮灯。下方伪代码写错一处，请找错行并选正确替换。",lines:["如果 灯已点亮 则","    点亮灯","否则","    点亮灯"],bug:1,options:["将第1行「点亮灯」改为「熄灭灯」","将第1行「点亮灯」改为「播放音效」","将第3行「点亮灯」改为「熄灭灯」","将第0行「已点亮」改为「未点亮」"],ans:0}
+ ]},
+ {w:12,par:90,qs:[
+  {qid:"s7-1",type:"fill",d:"hard",t:"神树共鸣",target:"观众长按神树：先判断是否超过2秒——未超过则枝头微光提示；超过再判断鸟形饰状态：已点亮则整体发光并播共鸣音，未点亮则开始充能。链条缺失关键一环，请补全。",pre:[["e","用户长按神树"],["c","判断长按是否超过2秒"],["a","枝头微光提示"],null,["a","神树整体发光并播放共鸣音"],["a","鸟形饰开始充能"]],options:[["c","判断鸟形饰是否已点亮"],["c","判断神树是否已发光"],["a","播放共鸣音效"],["e","用户松开手指"],["c","判断长按是否超过5秒"]],ans:0},
+  {qid:"s7-2",type:"fill",d:"hard",t:"符文解封",target:"观众点击符文：先判断倒计时是否进行中——已结束则无响应；进行中则点亮该符文，再判断是否已点亮4个：达到则停止倒计时并胜利，未达到则点亮数+1继续。链条缺失关键一环，请补全。",pre:[["e","用户点击符文"],["c","判断倒计时是否进行中"],["a","无响应"],["a","点亮该符文"],["c","判断是否已点亮4个"],null,["a","点亮数加一并继续计时"]],options:[["a","停止倒计时并播放胜利动画"],["a","继续倒计时"],["a","熄灭全部符文"],["c","判断是否首次点击"]],ans:0},
+  {qid:"s7-3",type:"fill",d:"hard",t:"祭典前置",target:"开启祭典前，先判断石门是否已开启：未开启则提示「先开启石门」并终止流程；已开启才继续判断圣火。链条缺失关键一环，请补全。",pre:[["e","用户点击「开启祭典」"],["c","判断石门是否已开启"],null,["a","终止流程"],["a","继续判断圣火是否点燃"]],options:[["a","提示「先开启石门」"],["a","播放开场动画"],["c","判断金杖是否解封"],["e","用户再次点击"]],ans:0}
+ ]},
+ {w:12,par:100,qs:[
+  {qid:"s8-1",type:"fix",d:"hard",t:"金杖封印",target:"需求：点击「开始解封」后启动10秒倒计时；点符文时倒计时已结束则无响应；进行中则点亮该符文，满4个则停止倒计时并胜利；倒计时结束则熄灭全部并失败。下方实现有「胜利后倒计时仍在跑」的缺陷，请找错并替换。",pre:[["e","用户点击「开始解封」"],["a","启动10秒倒计时"],["e","用户点击符文"],["c","判断倒计时是否进行中"],["a","无响应"],["a","点亮该符文"],["c","判断是否已点亮4个"],["a","点亮数加一并继续计时"],["e","倒计时自然结束"],["a","熄灭全部并提示失败"]],bug:7,options:[["a","停止倒计时并播放胜利动画"],["a","播放胜利动画"],["a","重置倒计时为10秒"],["a","点亮全部剩余符文"]],ans:0},
+  {qid:"s8-2",type:"fix",d:"hard",t:"祭典流程",target:"需求：开启祭典前，判断石门未开启则提示「先开启石门」并终止流程；已开启再判断圣火是否点燃。下方实现有「石门未开启仍继续」的缺陷，请找错并替换。",pre:[["e","用户点击「开启祭典」"],["c","判断石门是否已开启"],["a","提示「先开启石门」"],["a","继续判断圣火是否点燃"],["c","判断圣火是否已点燃"]],bug:3,options:[["a","终止流程"],["a","播放开场动画"],["c","判断金杖是否解封"],["a","提示「先点燃圣火」"]],ans:0},
+  {qid:"s8-3",type:"fix",d:"hard",t:"长按判定",target:"需求：长按超过2秒才触发共鸣。下方实现有「未满2秒也触发」的缺陷，请找错并替换。",pre:[["e","用户长按神树"],["c","判断长按是否小于2秒"],["a","枝头微光提示"],["a","触发神树共鸣"]],bug:1,options:[["c","判断长按是否超过2秒"],["c","判断长按是否小于5秒"],["a","播放共鸣音效"],["c","判断是否首次长按"]],ans:0}
+ ]},
+ {w:12,par:120,qs:[
+  {qid:"s9-1",type:"debug",d:"hard",t:"胜利后停表",target:"需求：点亮第4个符文后必须停止倒计时并播放胜利动画。下方伪代码出现「胜利后倒计时仍在跑」，请找错行并选正确替换。",lines:["点亮符文数 = 点亮符文数 + 1","如果 点亮符文数 >= 4 则","    播放胜利动画","否则","    继续倒计时"],bug:2,options:["将第2行改为「停止倒计时并播放胜利动画」","将第2行改为「播放胜利动画」","将第2行改为「重置倒计时」","将第1行改为「点亮符文数 == 4」"],ans:0},
+  {qid:"s9-2",type:"debug",d:"hard",t:"碎片运算",target:"需求：开启石门需扣除3枚碎片。下方伪代码写错一处，请找错行并选正确替换。",lines:["如果 碎片数 >= 3 则","    碎片数 = 碎片数 + 3","    播放开门动画","否则","    提示「碎片不足」"],bug:1,options:["将「+ 3」改为「- 3」","将「+ 3」改为「+ 1」","将「+ 3」改为「- 1」","将「+ 3」改为「= 0」"],ans:0},
+  {qid:"s9-3",type:"debug",d:"hard",t:"倒计时递减",target:"需求：解封倒计时为10秒，每过1秒减1。下方伪代码写错一处，请找错行并选正确替换。",lines:["倒计时 = 10","每过 1 秒:","    倒计时 = 倒计时 + 1","如果 倒计时 <= 0 则","    提示「失败」"],bug:2,options:["将「+ 1」改为「- 1」","将「+ 1」改为「+ 10」","将第0行「= 10」改为「= 0」","将第3行「<= 0」改为「>= 0」"],ans:0}
+ ]},
+ {w:10,par:120,qs:[
+  {qid:"s10-1",type:"sort",d:"hard",t:"数字祭典",target:"点击「开启祭典」：先判断石门是否已开启——未开启则提示「先开启石门」并终止；已开启再判断圣火是否点燃——未点燃则提示「先点燃圣火」并终止；两者齐备则播放开场动画、并行启动古乐、最后解锁金杖。",blocks:[["e","用户点击「开启祭典」"],["c","判断石门是否已开启"],["a","提示「先开启石门」"],["a","终止流程"],["c","判断圣火是否已点燃"],["a","提示「先点燃圣火」"],["a","终止流程"],["a","播放祭典开场动画"],["a","并行启动背景古乐"],["a","解锁金杖互动权限"],["c","判断金杖是否已解封"],["a","播放石门开启动画"],["a","启动10秒倒计时"],["c","判断古乐是否播放完毕"],["a","关闭展馆全部灯光"]],sol:[0,1,2,3,4,5,6,7,8,9]},
+  {qid:"s10-2",type:"sort",d:"hard",t:"拼图复原",target:"点击「开始拼图」：先打乱碎片；随后判断是否拼合完成——未完成则继续等待点击；已完成则播放文物升起动画并显示铭文。",blocks:[["e","用户点击「开始拼图」"],["a","打乱碎片"],["c","判断是否拼合完成"],["a","等待用户继续点击"],["a","播放文物升起动画"],["a","显示铭文"],["a","立即显示铭文"],["c","判断碎片数量是否足够"],["e","用户滑动屏幕"]],sol:[0,1,2,3,4,5]},
+  {qid:"s10-3",type:"sort",d:"hard",t:"考古刷土",target:"观众在文物表面滑动：先判断是否为有效刷动；有效则清除一层泥土并判断是否全部清除——是则显示文物；否则继续等待刷动。",blocks:[["e","用户滑动文物表面"],["c","判断滑动是否为有效刷动"],["a","清除一层泥土"],["c","判断是否全部清除"],["a","显示文物"],["a","继续等待刷动"],["a","显示提示文字"],["c","判断是否在展厅内"],["e","用户点击按钮"]],sol:[0,1,2,3,4,5]}
+ ]}
+];
+
+/* ============ 随机与抽题 ============ */
+function getSeed(){
+  var m = /[?&]seed=(\d+)/.exec(location.search);
+  return m ? parseInt(m[1], 10) : null;
+}
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+var seed = getSeed();
+var rand = (seed===null) ? Math.random : mulberry32(seed);
+
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+
+/* 每位选手按固定难度结构抽 10 题：每个题位随机抽 1 道候选 */
+function buildPaper(){
+  var arr=[];
+  for(var s=0;s<BANK.length;s++){
+    var slot=BANK[s];
+    var cand=slot.qs[Math.floor(rand()*slot.qs.length)];
+    var q=Object.assign({}, cand, { w:slot.w, par:slot.par, slot:s });
+    arr.push(q);
+  }
+  return arr;
+}
+
+/* ============ 全局状态 ============ */
+var sid="", name="", paper=[], cur=0;
+var chain=[], pool=[], gapFill=-1, selPos=-1, selOpt=-1;
+var attempts=0, qStart=0, startedAt=0, timer=null;
+var results=[], trace=[];
+var locked=false;   // 提交/切换期间防重复点击
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmt(s){ var m=Math.floor(s/60), x=s%60; return m+":"+(x<10?"0":"")+x; }
+function fmtMs(ms){
+  var s=ms/1000, m=Math.floor(s/60), sec=Math.floor(s%60), mil=Math.floor(ms%1000);
+  return m+":"+(sec<10?"0":"")+sec+"."+(mil<100?(mil<10?"00":"0"):"")+mil;
+}
+function round1(x){ return Math.round(x*10)/10; }
+
+/* ============ 计分 ============ */
+function computeScore(q, attemptsN, usedMs, ok){
+  var n = attemptsN - 1;                       // 错误提交次数
+  var wrongPen = n*(n+1);                      // 递增：第1次-2、第2次-4、第3次-6 => n(n+1)
+  var over = Math.max(0, usedMs - q.par*1000); // 超时毫秒
+  var timePen = over/1000 * TIME_PEN_RATE;     // 每秒 -0.5 分，连续计
+  var bonus = (ok && attemptsN===1) ? BONUS[q.d] : 0;  // 首对加分
+  var raw = q.w + bonus - wrongPen - timePen;
+  return Math.max(0, round1(raw));
+}
+function paperMax(){
+  var s=0; paper.forEach(function(q){ s += q.w + BONUS[q.d]; }); return s;
+}
+
+/* ============ 判定 ============ */
+function judgeLocal(q, sub){
+  if(q.type==="sort"){ return sub.length===q.sol.length && q.sol.every(function(v,i){ return sub[i]===v; }); }
+  if(q.type==="fill"){ return sub===q.ans; }
+  if(q.type==="fix" || q.type==="debug"){ return sub.pos===q.bug && sub.opt===q.ans; }
+  return false;
+}
+function currentSubmission(){
+  var q=paper[cur];
+  if(q.type==="sort") return chain.slice();
+  if(q.type==="fill") return gapFill;
+  return { pos: selPos, opt: selOpt };
+}
+
+/* ============ 开始 / 流程 ============ */
+function startGame(){
+  var box1=document.getElementById("inp-sid"), box2=document.getElementById("inp-name");
+  var v1=box1.value.trim(), v2=box2.value.trim();
+  box1.style.borderColor=""; box2.style.borderColor="";
+  if(!v1){ box1.style.borderColor="var(--red)"; return; }
+  if(!v2){ box2.style.borderColor="var(--red)"; return; }
+  var nSid=normSid(v1), nName=normName(v2);
+
+  function enterGame(){
+    document.getElementById("hud-name").textContent=sid+" · "+name;
+    document.getElementById("s-start").classList.remove("on");
+    document.getElementById("s-game").classList.add("on");
+    timer=setInterval(function(){
+      document.getElementById("hud-time").textContent=fmt(Math.floor((Date.now()-startedAt)/1000));
+    },1000);
+  }
+  function beginNew(){
+    startedAt=Date.now();
+    paper=buildPaper(); results=[]; trace=[];
+    savePaper();
+    trace.push({t:Date.now(),e:"start",sid:sid,name:name,seed:seed});
+    enterGame(); loadLevel(0);
+  }
+  function beginResume(){
+    var st=loadProg()||{};
+    results=st.results||[]; trace=st.trace||[]; startedAt=st.startedAt||Date.now();
+    var pp=loadPaper();
+    if(!pp||!pp.length){ beginNew(); return; }
+    paper=pp;
+    enterGame();
+    var next=results.length;
+    if(next<paper.length){ loadLevel(next); } else { endGame(); }
+  }
+
+  if(serverEnabled()){
+    api("/login",{sid:nSid,name:nName}).then(function(res){
+      if(res && res.ok===false){ alert(res.msg||"学号与姓名不匹配，或答题机会已用。"); return; }
+      SERVER.token = res && res.token ? res.token : "";
+      sid=nSid; name=(res && res.name) ? res.name : nName;
+      if(res && res.resume){ beginResume(); } else { beginNew(); }
+    }).catch(function(){ alert("登录失败，请检查网络后重试。"); });
+  } else {
+    if(!ROSTER.hasOwnProperty(nSid) || ROSTER[nSid]!==nName){
+      box1.style.borderColor="var(--red)"; box2.style.borderColor="var(--red)";
+      alert("学号与姓名不匹配，无法进入。");
+      return;
+    }
+    sid=nSid; name=ROSTER[nSid];
+    if(isDone()){ alert("该学号已完成本次答题，机会已使用，无法重复进入。"); return; }
+    if(loadPaper() && loadProg()){ beginResume(); } else { beginNew(); }
+  }
+}
+
+function loadLevel(i){
+  cur=i; attempts=0; chain=[]; pool=[]; gapFill=-1; selPos=-1; selOpt=-1; locked=false;
+  qStart=Date.now();
+  var L=paper[i];
+  document.getElementById("hud-prog").textContent=(i+1)+"/"+paper.length;
+  document.getElementById("hud-att").textContent=MAX_ATTEMPTS;
+  document.getElementById("hud-score").textContent=round1(results.reduce(function(s,r){return s+r.score;},0));
+  document.getElementById("lvl-title").textContent=L.t;
+  document.getElementById("lvl-badge").textContent="第"+(i+1)+"/"+paper.length+"题 · "+TYPENAME[L.type]+" · "+DIFNAME[L.d]+" · "+L.w+"分";
+  document.getElementById("lvl-target").textContent="目标效果："+L.target;
+  document.getElementById("fb").className="fb";
+  document.getElementById("btn-run").textContent = (L.type==="sort") ? "运 行" : "提 交";
+
+  if(L.type==="sort"){
+    pool=shuffle(L.blocks.map(function(b,idx){return idx;}));
+    document.getElementById("pool-label").textContent="备选逻辑块（点击放入链条）";
+    document.getElementById("chain-label").textContent="逻辑链条（点击可撤回）";
+    document.getElementById("btn-reset").style.display="";
+  }else if(L.type==="fill"){
+    pool=shuffle(L.options.map(function(b,idx){return idx;}));
+    document.getElementById("pool-label").textContent="选项（点击填入缺口）";
+    document.getElementById("chain-label").textContent="逻辑链条";
+    document.getElementById("btn-reset").style.display="none";
+  }else if(L.type==="fix"){
+    pool=L.options.map(function(b,idx){return idx;});
+    document.getElementById("pool-label").textContent="替换选项（先点链条中的错误块，再点替换选项）";
+    document.getElementById("chain-label").textContent="待排查的逻辑链条（点击选中可疑块）";
+    document.getElementById("btn-reset").style.display="none";
+  }else{ // debug
+    pool=L.options.map(function(b,idx){return idx;});
+    document.getElementById("pool-label").textContent="替换方案（先点伪代码中的错误行，再点正确替换）";
+    document.getElementById("chain-label").textContent="伪代码（点击选中可疑行）";
+    document.getElementById("btn-reset").style.display="none";
+  }
+  render();
+}
+
+function tagHtml(t){ return '<span class="tag '+t+'">'+TAG[t]+'</span>'; }
+function mkBlk(b, onclick, locked){
+  var d=document.createElement("div");
+  d.className="blk t-"+b[0]+(locked?" locked":"");
+  d.innerHTML=tagHtml(b[0])+esc(b[1]);
+  if(onclick) d.onclick=onclick;
+  return d;
+}
+
+function render(){
+  var L=paper[cur], p=document.getElementById("pool"), c=document.getElementById("chain");
+  p.innerHTML=""; c.innerHTML="";
+
+  if(L.type==="sort"){
+    pool.forEach(function(idx){
+      p.appendChild(mkBlk(L.blocks[idx], function(){ chain.push(idx); pool=pool.filter(function(x){return x!==idx;}); render(); }));
+    });
+    if(chain.length===0){ c.innerHTML='<div class="ph">逻辑块将显示在这里（已选 '+chain.length+' 块）</div>'; }
+    chain.forEach(function(idx){
+      c.appendChild(mkBlk(L.blocks[idx], function(){ pool.push(idx); chain=chain.filter(function(x){return x!==idx;}); render(); }));
+    });
+    document.getElementById("btn-run").disabled = (chain.length===0);
+  }
+  else if(L.type==="fill"){
+    pool.forEach(function(idx){
+      p.appendChild(mkBlk(L.options[idx], function(){ gapFill=idx; pool=pool.filter(function(x){return x!==idx;}); render(); }));
+    });
+    L.pre.forEach(function(b,pos){
+      if(b===null){
+        if(gapFill>=0){ c.appendChild(mkBlk(L.options[gapFill], function(){ pool.push(gapFill); gapFill=-1; render(); })); }
+        else { var g=document.createElement("div"); g.className="blk gap"; g.textContent="? 缺口"; c.appendChild(g); }
+      }else{
+        c.appendChild(mkBlk(b, null, true));
+      }
+    });
+    document.getElementById("btn-run").disabled = (gapFill<0);
+  }
+  else if(L.type==="fix"){
+    pool.forEach(function(idx){
+      var d=mkBlk(L.options[idx], function(){ selOpt=(selOpt===idx?-1:idx); render(); });
+      if(selOpt===idx) d.classList.add("sel");
+      p.appendChild(d);
+    });
+    L.pre.forEach(function(b,pos){
+      var d=mkBlk(b, function(){ selPos=(selPos===pos?-1:pos); render(); });
+      if(selPos===pos) d.classList.add("sel");
+      c.appendChild(d);
+    });
+    document.getElementById("btn-run").disabled = !(selPos>=0 && selOpt>=0);
+  }
+  else{ // debug
+    L.lines.forEach(function(line, i){
+      var d=document.createElement("div");
+      d.className="line"+(selPos===i?" sel":"");
+      var ln=document.createElement("span"); ln.className="ln"; ln.textContent=(i+1);
+      var lc=document.createElement("span"); lc.className="lc"; lc.textContent=line;
+      d.appendChild(ln); d.appendChild(lc);
+      d.onclick=function(){ selPos=(selPos===i?-1:i); render(); };
+      c.appendChild(d);
+    });
+    pool.forEach(function(idx){
+      var d=document.createElement("div");
+      d.className="blk"+(selOpt===idx?" sel":"");
+      d.textContent=L.options[idx];
+      d.onclick=function(){ selOpt=(selOpt===idx?-1:idx); render(); };
+      p.appendChild(d);
+    });
+    document.getElementById("btn-run").disabled = !(selPos>=0 && selOpt>=0);
+  }
+}
+
+function resetChain(){
+  pool=pool.concat(chain); chain=[];
+  document.getElementById("fb").className="fb";
+  render();
+}
+
+function runChain(){
+  if(locked) return;
+  attempts++;
+  var q=paper[cur];
+  var sub=currentSubmission();
+  var usedMs=Date.now()-qStart;
+
+  var onVerdict=function(ok, serverScore){
+    var score = (typeof serverScore==="number") ? serverScore : computeScore(q, attempts, usedMs, ok);
+    var firstTry = (ok && attempts===1);
+    trace.push({t:Date.now(),e:(ok?"pass":"fail"),qid:q.qid,type:q.type,attempt:attempts,usedMs:usedMs,ok:ok,score:score,sub:sub});
+    finishSubmit(ok, score, usedMs, firstTry);
+  };
+
+  if(serverEnabled()){
+    locked=true;
+    api("/judge",{ qid:q.qid, type:q.type, sub:sub, attempt:attempts, usedMs:usedMs })
+      .then(function(res){ onVerdict(res.ok, res.score); })
+      .catch(function(){ locked=false; alert("网络错误，请重试提交。"); });
+  }else{
+    onVerdict(judgeLocal(q, sub), null);
+  }
+}
+
+function finishSubmit(ok, score, usedMs, firstTry){
+  var q=paper[cur];
+  var fb=document.getElementById("fb");
+
+  if(ok){
+    results.push({ idx:cur+1, qid:q.qid, type:q.type, d:q.d, title:q.t, attempts:attempts, usedMs:usedMs, firstTry:firstTry, score:score });
+    document.getElementById("hud-score").textContent=round1(results.reduce(function(s,r){return s+r.score;},0));
+    fb.className="fb ok";
+    fb.textContent = firstTry ? "✓ 一次通过（首对加分 +"+BONUS[q.d]+"），进入下一题…" : "✓ 判定正确（第 "+attempts+" 次提交），进入下一题…";
+    locked=true;
+    setTimeout(function(){
+      if(cur+1<paper.length) loadLevel(cur+1); else endGame();
+    },1400);
+  }
+  else{
+    fb.className="fb bad";
+    document.getElementById("hud-att").textContent=Math.max(0,MAX_ATTEMPTS-attempts);
+    if(attempts>=MAX_ATTEMPTS){
+      // 机会用尽，本题按最后一次提交结算（未对则得分按公式计，通常很低或为 0），强制进入下一题
+      results.push({ idx:cur+1, qid:q.qid, type:q.type, d:q.d, title:q.t, attempts:attempts, usedMs:usedMs, firstTry:false, score:score });
+      document.getElementById("hud-score").textContent=round1(results.reduce(function(s,r){return s+r.score;},0));
+      fb.textContent="✗ 提交机会用尽，本题得分 "+score+"，进入下一题…";
+      locked=true;
+      setTimeout(function(){
+        if(cur+1<paper.length) loadLevel(cur+1); else endGame();
+      },1600);
+    }else{
+      fb.textContent="✗ 判定不成立（第 "+attempts+"/"+MAX_ATTEMPTS+" 次提交），可修改后重试。";
+    }
+  }
+  persist();
+}
+
+function endGame(){
+  clearInterval(timer);
+  markDone();
+  var totalMs=Date.now()-startedAt;
+  var score=round1(results.reduce(function(s,r){return s+r.score;},0));
+  var firstCount=results.filter(function(r){return r.firstTry;}).length;
+  trace.push({t:Date.now(),e:"end",totalMs:totalMs,totalScore:score});
+
+  document.getElementById("s-game").classList.remove("on");
+  document.getElementById("s-end").classList.add("on");
+  document.getElementById("end-name").textContent=name;
+  document.getElementById("end-sid").textContent="学号："+sid;
+  document.getElementById("end-score").textContent=score;
+  document.getElementById("end-max").textContent=paperMax();
+  document.getElementById("end-time").textContent=fmtMs(totalMs);
+  document.getElementById("end-first").textContent=firstCount;
+  document.getElementById("end-rankkey").textContent="决名次键：总分 "+score+" 分 · 总用时 "+totalMs+" 毫秒（总分降序 → 用时升序）";
+  var g=score>=paperMax()*0.9?"S":score>=paperMax()*0.7?"A":score>=paperMax()*0.5?"B":"C";
+  document.getElementById("end-grade").textContent=g;
+
+  var tb=document.getElementById("end-rows"), html="";
+  results.forEach(function(r){
+    html+="<tr><td>"+r.idx+"</td><td>"+TYPENAME[r.type]+"</td><td>"+DIFNAME[r.d]+"</td><td>"+r.attempts+"</td><td>"+fmtMs(r.usedMs)+"</td><td>"+(r.firstTry?"✓":"—")+"</td><td>"+r.score+"</td></tr>";
+  });
+  tb.innerHTML=html;
+  window.scrollTo(0,0);
+
+  if(serverEnabled()){
+    api("/result",{ sid:sid, name:name, seed:seed, totalMs:totalMs, totalScore:score, results:results, trace:trace })
+      .catch(function(){ /* 结果上报失败不阻塞本机展示 */ });
+  }
+}
+
+function exportJSON(){
+  var data={
+    sid:sid, name:name, seed:seed,
+    ts:new Date().toISOString(),
+    totalScore:round1(results.reduce(function(s,r){return s+r.score;},0)),
+    maxPossible:paperMax(),
+    totalMs:Date.now()-totalStart,
+    firstTryCount:results.filter(function(r){return r.firstTry;}).length,
+    results:results,
+    trace:trace
+  };
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="gushu-"+sid+".json";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },200);
+}
+
+/* 演示模式徽标 */
+(function(){
+  var b=document.getElementById("mode-badge");
+  if(serverEnabled()){ b.textContent="服务端判定模式"; b.className="mode ok"; }
+  else { b.textContent="演示模式（离线）· 名单校验 + 一次性机会（本地）"; }
+})();
+/* 老师重置某学号记录：用 ?reset=学号 打开一次 */
+(function(){
+  var m=/[?&]reset=([^&]+)/.exec(location.search);
+  if(m){
+    var r=normSid(decodeURIComponent(m[1]));
+    Object.keys(LS).forEach(function(k){ try{ localStorage.removeItem(LS[k]+r); }catch(e){} });
+    alert("已重置学号 "+r+" 的答题记录。");
+  }
+})();
+</script>
+</body>
+</html>

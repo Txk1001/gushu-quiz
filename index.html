@@ -178,7 +178,13 @@ var TAG = { e:"事件", c:"条件", a:"动作" };
 
 /* 答题截止时间：到点后新考生不可再进入 */
 var DEADLINE = Date.parse("2026-10-15T21:40:00+08:00");
-function isExpired(){ return Date.now() >= DEADLINE; }
+/* 专属放行口令：带 ?key=... 打开可绕过截止时间（仅用于个别补测） */
+var ALLOW_KEY = "gq-9f3a2c7e";
+function hasAllowKey(){
+  var m = /[?&]key=([^&]+)/.exec(location.search);
+  return !!m && decodeURIComponent(m[1]) === ALLOW_KEY;
+}
+function isExpired(){ return !hasAllowKey() && Date.now() >= DEADLINE; }
 
 /* ============ 报名名单（26 人）与登录校验 ============ */
 function normSid(s){ return String(s).replace(/\s+/g,'').toUpperCase(); }
